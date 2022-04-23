@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<info xmlns:xsi= "http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>fileage</id>
+    <name>Fileage</name>
+    <summary>https://apps.nextcloud.com/developer/apps/generate</summary>
+    <description>Age File</description>
+    <version>0.0.1</version>
+    <licence>agpl</licence>
+    <author mail="sinakazemian00@gmail.com" homepage="https://apps.nextcloud.com/developer/apps/generate">SKZ</author>
+    <namespace>FileAge</namespace>
+    <category>files</category>
+    <bugs>https://apps.nextcloud.com/developer/apps/generate</bugs>
+    <dependencies>
+        <nextcloud min-version="15" max-version="15"/>
+    </dependencies>
+    <navigations>
+    </navigations>
+    <commands>
+        <command>OCA\FileAge\Command\AgeCheck</command>
+    </commands>
+</info>

@@ -1,0 +1,15 @@
+{
+    "name": "fileage/fileage",
+    "description": "https://apps.nextcloud.com/developer/apps/generate",
+    "type": "project",
+    "license": "AGPL",
+    "authors": [
+        {
+            "name": "SKZ"
+        }
+    ],
+    "require": {},
+    "require-dev": {
+        "phpunit/phpunit": "^5.4"
+    }
+}
