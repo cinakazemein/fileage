@@ -6,6 +6,8 @@ https://github.com/nextcloud/activity
 for building this app activity app had to installed already
 ## Building the app
 Place this app in **nextcloud/apps/** and make it enable
+## command
+this command must be in cron job `sudo -u www-data php occ age:check`
 ## Development
 for any development as frontend you have to run `npm run build` in src folder (fileage)
 ## Nextcloud Version
