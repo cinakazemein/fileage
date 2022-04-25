@@ -9,18 +9,21 @@ use OCP\IDBConnection;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
 
-class FileAgeService {
+class FileAgeService
+{
     private $qb;
     private $dataDirectory;
     private \OCP\IUserManager $userManager;
 
-    public function __construct(IDBConnection $db, Iconfig $config, \OCP\IUserManager $userManager) {
+    public function __construct(IDBConnection $db, Iconfig $config, \OCP\IUserManager $userManager)
+    {
         $this->qb = $db->getQueryBuilder();
         $this->dataDirectory = $config->getSystemValue('datadirectory');
         $this->userManager = $userManager;
     }
 
-    public function getExpiredFilesAndFolders() {
+    public function getExpiredFilesAndFolders()
+    {
         $result = $this->qb->select('*')
             ->from('activity')
             ->where('expired_at < ' . time())
@@ -29,7 +32,8 @@ class FileAgeService {
         return $result->fetchAll();
     }
 
-    public function collectFilesAndFolders($expiredFilesAndFolders) {
+    public function collectFilesAndFolders($expiredFilesAndFolders)
+    {
         $data = ['files' => [], 'folders' => []];
         foreach ($expiredFilesAndFolders as $key => $row) {
             $explodedFiles = explode('/', $row['file']);
@@ -43,7 +47,8 @@ class FileAgeService {
         return $data;
     }
 
-    public function extractFilesFromFolders($folders) {
+    public function extractFilesFromFolders($folders)
+    {
         $data = [];
         foreach ($folders as $folder) {
             $files = glob($folder['absolutePath'] . '/*'); // get all file names
@@ -59,7 +64,8 @@ class FileAgeService {
         return $data;
     }
 
-    public function remove($files) {
+    public function remove($files)
+    {
         foreach ($files as $file) {
             if (is_file($file['absolutePath'])) {
                 unlink($file['absolutePath']);
@@ -73,7 +79,8 @@ class FileAgeService {
         }
     }
 
-    public function removeExpired() {
+    public function removeExpired()
+    {
         $filesAndFoldersCollection = $this->collectFilesAndFolders($this->getExpiredFilesAndFolders());
         $extractedFilesFromFolders = $this->extractFilesFromFolders($filesAndFoldersCollection['folders']);
         $files = array_merge($filesAndFoldersCollection['files'], $extractedFilesFromFolders);
@@ -81,17 +88,20 @@ class FileAgeService {
         $this->scan();
     }
 
-    private function generateAbsolutePath($user, $fileOrFolderPath) {
+    private function generateAbsolutePath($user, $fileOrFolderPath)
+    {
         return $this->dataDirectory . '/' . $user . '/files' . $fileOrFolderPath;
     }
 
-    private function getRelativeFilePathFromFolder($folderRelativePath, $absolutePath) {
+    private function getRelativeFilePathFromFolder($folderRelativePath, $absolutePath)
+    {
         $explodedAbsolutePath = explode("/", $absolutePath);
         $filename = end($explodedAbsolutePath);
         return $folderRelativePath . '/' . $filename;
     }
 
-    private function scan() {
+    private function scan()
+    {
         $users = $this->userManager->search('');
         foreach ($users as $user) {
             $user = $user->getUID();
@@ -105,7 +115,8 @@ class FileAgeService {
         }
     }
 
-    private function getConnection() {
+    private function getConnection()
+    {
         $connection = \OC::$server->get(Connection::class);
         try {
             $connection->close();
@@ -119,5 +130,27 @@ class FileAgeService {
             }
         }
         return $connection;
+    }
+
+    public function getSelfCreatedFile($user, $path)
+    {
+        $result = $this->qb->select('*')
+            ->from('activity')
+            ->where($this->qb->expr()->eq('user', $this->qb->createNamedParameter($user)))
+            ->andWhere($this->qb->expr()->eq('type', $this->qb->createNamedParameter('file_created')))
+            ->andWhere($this->qb->expr()->eq('file', $this->qb->createNamedParameter($path)))
+            ->execute();
+        return $result->fetch();
+    }
+
+    public function setExpiredAt($selfCreatedFile, $user, $path, $days)
+    {
+        $numberOfDays = '+' . $days . ' days';
+        $this->qb->update('activity')
+            ->set('expired_at', $this->qb->createNamedParameter(strtotime($numberOfDays, $selfCreatedFile['timestamp'])))
+            ->where($this->qb->expr()->eq('user', $this->qb->createNamedParameter($user)))
+            ->andWhere($this->qb->expr()->eq('type', $this->qb->createNamedParameter('file_created')))
+            ->andWhere($this->qb->expr()->eq('file', $this->qb->createNamedParameter($path)));
+        $this->qb->execute();
     }
 }

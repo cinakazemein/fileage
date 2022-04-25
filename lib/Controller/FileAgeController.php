@@ -4,59 +4,36 @@
 namespace OCA\FileAge\Controller;
 
 
+use OCA\FileAge\Service\FileAgeService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\Files\IRootFolder;
-use OCP\IDBConnection;
 use OCP\IUserSession;
 
-class FileAgeController extends Controller
-{
-    /** @var IRootFolder */
-    private $storage;
+class FileAgeController extends Controller {
     /**
      * @var IUserSession
      */
     private $userSession;
     /**
-     * @var IDBConnection
+     * @var FileAgeService
      */
-    private $db;
+    private FileAgeService $fileAgeService;
 
-    public function __construct(IRootFolder $storage, IUserSession $userSession, IDBConnection $db)
-    {
-        $this->storage = $storage;
+    public function __construct(IUserSession $userSession, FileAgeService $fileAgeService) {
         $this->userSession = $userSession;
-        $this->db = $db;
+        $this->fileAgeService = $fileAgeService;
     }
 
     /**
      * @param $age
      * @param $fileInfo
      * @return JSONResponse
-     * @throws \OCP\DB\Exception
-     * @throws \OCP\Files\NotPermittedException
-     * @throws \OC\User\NoUserException
      * @NoAdminRequired
      */
-    public function submit($age, $fileInfo)
-    {
-        $qb = $this->db->getQueryBuilder();
-        $result = $qb->select('*')
-            ->from('activity')
-            ->where($qb->expr()->eq('user', $qb->createNamedParameter($this->userSession->getUser()->getUID())))
-            ->andWhere($qb->expr()->eq('type', $qb->createNamedParameter('file_created')))
-            ->andWhere($qb->expr()->eq('file', $qb->createNamedParameter($this->generateFileName($fileInfo))))
-            ->execute();
-        $row = $result->fetch();
-        if ($row) {
-            $numberOfDays = '+' . $age . ' days';
-            $qb->update('activity')
-                ->set('expired_at', $qb->createNamedParameter(strtotime($numberOfDays, $row['timestamp'])))
-                ->where($qb->expr()->eq('user', $qb->createNamedParameter($this->userSession->getUser()->getUID())))
-                ->andWhere($qb->expr()->eq('type', $qb->createNamedParameter('file_created')))
-                ->andWhere($qb->expr()->eq('file', $qb->createNamedParameter($this->generateFileName($fileInfo))));
-            $qb->execute();
+    public function submit($age, $fileInfo): JSONResponse {
+        $selfCreatedFile = $this->fileAgeService->getSelfCreatedFile($this->userSession->getUser()->getUID(), $this->generateFileName($fileInfo));
+        if ($selfCreatedFile) {
+            $this->fileAgeService->setExpiredAt($selfCreatedFile, $this->userSession->getUser()->getUID(), $this->generateFileName($fileInfo), $age);
             return new JSONResponse(
                 [
                     'result' => "folder or file will be removed at specified date",
@@ -65,14 +42,12 @@ class FileAgeController extends Controller
         }
         return new JSONResponse(
             [
-                'data' => $fileInfo['name'],
                 'error' => "not found",
             ]
         );
     }
 
-    private function generateFileName($fileInfo)
-    {
+    private function generateFileName($fileInfo): string {
         return !$fileInfo['dir'] ? "/{$fileInfo['name']}" : $fileInfo['dir'] . "/{$fileInfo['name']}";
     }
 }
