@@ -69,6 +69,7 @@ class AgeCheck extends Base {
      */
     protected function execute(InputInterface $input, OutputInterface $output): int {
         $this->fileAgeService->removeExpired();
+        $output->write("Files Successfully Deleted");
         exit();
     }
 }

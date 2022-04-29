@@ -1,13 +1,13 @@
 <template>
   <Content :class="{'icon-loading': loading, 'd-block': true }" app-name="vueexample">
     <input type="text"
-		   v-model="age"
-		   placeholder="number of days to delete(content)"
-		   class="w-100" />
-	  <br>
+           v-model="age"
+           placeholder="number of days to delete(content)"
+           class="w-100" />
+    <br>
 
     <button @click="sendFileAge"
-			class="button bg-warning w-100">submit</button>
+            class="button bg-warning w-100">submit</button>
   </Content>
 </template>
 
@@ -42,9 +42,11 @@ export default {
       const body = {fileInfo: this.fileInfo, age: this.age}
       axios.post(url, body)
           .then(function (response) {
+            alert("age successfully sent")
             console.log(response);
           })
           .catch(function (error) {
+            alert("age error")
             console.log(error);
           });
     },
@@ -62,11 +64,11 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-	.w-100{
-		width: 100%;
-	}
+.w-100{
+  width: 100%;
+}
 
-	.d-block{
-		display: block;
-	}
+.d-block{
+  display: block;
+}
 </style>
